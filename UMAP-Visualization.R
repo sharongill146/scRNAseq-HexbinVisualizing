@@ -34,7 +34,7 @@ if (exists("umap_coords") && !is.null(umap_coords)) {
   colnames(df_clean) <- c("UMAP_1", "UMAP_2")  # Assign correct column names
 
   # Add metadata information (e.g., cell types) from Seurat object
-  df_clean$General_type <- seurat_obj@meta.data$cell_type  # Adjust column name if needed
+  df_clean$cell_type <- seurat_obj@meta.data$cell_type  # Adjust column name if needed
 
   # Remove NA values in UMAP coordinates
   df_clean <- df_clean[!is.na(df_clean$UMAP_1) & !is.na(df_clean$UMAP_2), ]
@@ -43,13 +43,13 @@ if (exists("umap_coords") && !is.null(umap_coords)) {
   df_clean$UMAP_1[is.na(df_clean$UMAP_1)] <- mean(df_clean$UMAP_1, na.rm = TRUE)
   df_clean$UMAP_2[is.na(df_clean$UMAP_2)] <- mean(df_clean$UMAP_2, na.rm = TRUE)
 
-  # Handle missing values in 'General_type'
-  if ("General_type" %in% colnames(df_clean)) {
-    if (any(is.na(df_clean$General_type))) {
-      df_clean$General_type[is.na(df_clean$General_type)] <- "Unknown"
+  # Handle missing values in 'cell_type'
+  if ("cell_type" %in% colnames(df_clean)) {
+    if (any(is.na(df_clean$cell_type))) {
+      df_clean$cell_type[is.na(df_clean$cell_type)] <- "Unknown"
     }
   } else {
-    message("Column 'General_type' not found in metadata.")
+    message("Column 'cell_type' not found in metadata.")
   }
 
   # Adjust xlim and ylim based on data distribution
@@ -61,10 +61,10 @@ if (exists("umap_coords") && !is.null(umap_coords)) {
   y_lim <- c(y_range[1] + 0.1 * diff(y_range), y_range[2] - 0.1 * diff(y_range))
   
   # Generate the visualization
-  umap_plot <- ggplot(df_clean, aes(x = UMAP_1, y = UMAP_2, fill = General_type)) +
+  umap_plot <- ggplot(df_clean, aes(x = UMAP_1, y = UMAP_2, fill = cell_type)) +
     geom_hdr(xlim = x_range, ylim = y_range) +  # High-density region visualization
     geom_point(shape = 21, alpha = 0.6) +  # Semi-transparent points for better visualization
-    scale_fill_brewer(palette = "Set2") +  # Better color mapping
+    scale_fill_brewer(palette = "Set3") +  # Better color mapping
     labs(title = "UMAP Subpopulation Visualization",
          x = "UMAP Dimension 1", y = "UMAP Dimension 2", fill = "Cell Type") +
     theme_minimal() +
@@ -79,12 +79,12 @@ if (exists("umap_coords") && !is.null(umap_coords)) {
 
 #UMAP Embedding and Density Visualization with Cell-Type Distribution
 #====================================================================
-  ggplot(df_clean, aes(x = UMAP_1, y = UMAP_2, color = General_type)) +
+  ggplot(df_clean, aes(x = UMAP_1, y = UMAP_2, color = cell_type)) +
   geom_hdr_lines(xlim = x_lim, ylim = y_lim) +  # High-density region contours
   geom_hdr(alpha = 0.3, xlim = x_lim, ylim = y_lim) +  # Highlight density, reduce alpha for clarity
   geom_point(size = 1, alpha = 0.8, shape = 21, fill = "white", color = "black", stroke = 0.3) +  # Plot individual points, outlined points for contrast
   geom_jitter(size = 0.8, width = 0.2, height = 0.2, alpha = 0.7) +  # More jitter to separate overlapping points
-  facet_wrap(~General_type) +  # Facet by cell type
+  facet_wrap(~cell_type) +  # Facet by cell type
   scale_color_viridis_d(option = "plasma") +  
   theme_minimal() +
   theme(

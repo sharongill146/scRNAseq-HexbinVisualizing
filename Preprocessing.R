@@ -1,4 +1,3 @@
-
 # Install and Load Necessary Packages
 #=====================================
 if (!requireNamespace("Seurat", quietly = TRUE)) install.packages("Seurat")
@@ -7,6 +6,8 @@ if (!requireNamespace("ggdensity", quietly = TRUE)) install.packages("dplyr")
 if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("Seurat")
 if (!requireNamespace("patchwork", quietly = TRUE)) install.packages("ggplot2")
 if (!requireNamespace("hexbin", quietly = TRUE)) install.packages("dplyr")
+if (!requireNamespace("ggrepel", quietly = TRUE)) install.packages("dplyr")
+
 
 library(Seurat)   # For scRNA-seq analysis
 library(ggplot2)  # For visualizations
@@ -14,6 +15,9 @@ library(ggdensity) #For density plots
 library(dplyr)    # For data manipulation
 library(patchwork) # For combining plots
 library(hexbin) # For hexagonal binning 
+library(ggrepel) #For labelling cell types
+library(viridisLite)
+library(reshape2)
 
 # Generate a distinct color palette using RColorBrewer
 #=====================================================
@@ -21,16 +25,7 @@ library(RColorBrewer)
 num_classes <- length(unique(df_clean$General_type))
 
 # Use Set3 or other palettes that support more colors
-colors <- brewer.pal(min(num_classes, 12), "Set3")
-
-ggplot(df_clean, aes(x = UMAP_1, y = UMAP_2, fill = General_type)) +
-  geom_hdr() +
-  geom_point(shape = 21, alpha = 0.6) +
-  scale_fill_manual(values = colors) +
-  labs(title = "UMAP Subpopulation Visualization",
-       x = "UMAP Dimension 1", y = "UMAP Dimension 2", fill = "Cell Type") +
-  theme_minimal() +
-  theme(legend.position = "right", axis.text = element_text(size = 12))
+colors <- brewer.pal(max(min(num_classes, 12), 3), "Set3")
 
 # Load Single-Cell Dataset (Adjust Path Accordingly)
 #====================================================
@@ -72,5 +67,4 @@ if ("cell_type" %in% colnames(meta_data)) {
 #======================================
 
 write.csv(meta_data, "metadata_output.csv", row.names = TRUE)
-
 
