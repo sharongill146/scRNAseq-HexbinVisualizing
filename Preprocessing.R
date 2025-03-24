@@ -7,7 +7,7 @@ if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("Seurat")
 if (!requireNamespace("patchwork", quietly = TRUE)) install.packages("ggplot2")
 if (!requireNamespace("hexbin", quietly = TRUE)) install.packages("dplyr")
 if (!requireNamespace("ggrepel", quietly = TRUE)) install.packages("dplyr")
-
+if (!requireNamespace("entropy", quietly = TRUE)) install.packages("dplyr")
 
 library(Seurat)   # For scRNA-seq analysis
 library(ggplot2)  # For visualizations
@@ -18,6 +18,7 @@ library(hexbin) # For hexagonal binning
 library(ggrepel) #For labelling cell types
 library(viridisLite)
 library(reshape2)
+library(entropy)
 
 # Generate a distinct color palette using RColorBrewer
 #=====================================================

@@ -8,7 +8,8 @@ if (!exists("df_clean")) {
 # Extract UMAP coordinates and cell types from df_clean
 x <- df_clean$UMAP_1
 y <- df_clean$UMAP_2
-cell_types <- df_clean$cell_type  # Ensure 'cell_type' exists
+cell_types <- seurat_obj@meta.data$cell_type
+cell_type <- df_clean$cell_type  # Ensure 'cell_type' exists
 
 # Convert to data frame
 df <- data.frame(UMAP_1 = x, UMAP_2 = y, cell_type = cell_types)
