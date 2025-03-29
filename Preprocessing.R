@@ -20,14 +20,6 @@ library(viridisLite)
 library(reshape2)
 library(entropy)
 
-# Generate a distinct color palette using RColorBrewer
-#=====================================================
-library(RColorBrewer)
-num_classes <- length(unique(df_clean$General_type))
-
-# Use Set3 or other palettes that support more colors
-colors <- brewer.pal(max(min(num_classes, 12), 3), "Set3")
-
 # Load Single-Cell Dataset (Adjust Path Accordingly)
 #====================================================
 dataset <- "/Users/sharongill/Desktop/cac9d341-6b8d-4ed3-8eaa-054688787840.rds"

@@ -136,6 +136,7 @@ ggplot(entropy_data, aes(x = cell_type, y = entropy, fill = cell_type)) +
     scale_fill_viridis_d() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
           legend.position = "none")
+
 # Step 6: Plotting Gene Expression
 
 # Check for Expression in the Data Set

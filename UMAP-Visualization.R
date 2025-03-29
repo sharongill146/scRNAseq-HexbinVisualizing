@@ -33,6 +33,13 @@ if (exists("umap_coords") && !is.null(umap_coords)) {
   df_clean <- as.data.frame(umap_coords)
   colnames(df_clean) <- c("UMAP_1", "UMAP_2")  # Assign correct column names
 
+  # Generate a distinct color palette using RColorBrewer
+  library(RColorBrewer)
+  num_classes <- length(unique(df_clean$General_type))
+
+  # Use Set3 or other palettes that support more colors
+colors <- brewer.pal(max(min(num_classes, 12), 3), "Set3")
+
   # Add metadata information (e.g., cell types) from Seurat object
   df_clean$cell_type <- seurat_obj@meta.data$cell_type  # Adjust column name if needed
 
