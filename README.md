@@ -36,4 +36,4 @@ https://cellxgene.cziscience.com/e/9c1b5626-58df-4401-ae7b-f66d068c1551.cxg/
 ## Contributors  
 
 Developed by Sharon Gill
-
+With Motivation for HexnicPlot Functions by Nicolas Ho

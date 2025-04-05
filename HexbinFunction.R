@@ -1,6 +1,4 @@
-#HexnicPlot Function
-#====================
-#' Create Hexagonal Map Visualization for Single-cell Data
+Create Hexagonal Map Visualization for Single-cell Data
 #'
 #' @param seurat_obj Seurat object
 #' @param reduction Dimension reduction to use (default: "umap")
@@ -33,7 +31,7 @@ HexnicPlot <- function(
     assay = "SCT",
     layer = "scale.data",
     min_cells = 3,
-    color_palette = "jco",
+    color_palette = "npg",
     alpha = 0.3,
     viridis = "magma"
 ) {
@@ -42,7 +40,7 @@ HexnicPlot <- function(
     stop("gene_name must be provided when plot_type is 'gene'")
   }
   
-  get_color_scale <- function(palette_name) {
+  get_color_scale <- function(palette_name, continuous = FALSE) {
     adaptive_pal_inner <- function(values) {
       force(values)
       n_colors <- length(values)
@@ -56,7 +54,7 @@ HexnicPlot <- function(
     }
     
     raw_cols <- switch(palette_name,
-                       "jco" = ggsci:::ggsci_db$"jco"[["nrc"]],
+                       "npg" = ggsci:::ggsci_db$"npg"[["nrc"]],
                        "aaas" = ggsci:::ggsci_db$"aaas"[["default"]],
                        "nejm" = ggsci:::ggsci_db$"nejm"[["default"]],
                        "jama" = ggsci:::ggsci_db$"jama"[["default"]],
@@ -72,7 +70,11 @@ HexnicPlot <- function(
       maxColorValue = 255L
     )
     
-    discrete_scale("fill", palette_name, adaptive_pal_inner(unname(alpha_cols)))
+    if (continuous) {
+      scale_fill_gradientn(colors = raw_cols)
+    } else {
+      discrete_scale("fill", palette_name, adaptive_pal_inner(unname(alpha_cols)))
+    }
   }
   
   umap_coords <- seurat_obj@reductions[[reduction]]@cell.embeddings
@@ -137,12 +139,16 @@ HexnicPlot <- function(
         summarize(
           cell_count = n(),
           majority = names(sort(table(class), decreasing = TRUE))[1],
-          mean_expr = mean(gene_expr),
+          mean_expr = mean(gene_expr, na.rm = TRUE),
           .groups = "drop"
         )
     }
   ) %>%
     filter(cell_count >= min_cells)
+  
+  if (nrow(hex_summary) < 2) {
+    stop("Not enough rows in hex_summary to perform interpolation.")
+  }
   
   p <- switch(
     plot_type,
@@ -161,10 +167,10 @@ HexnicPlot <- function(
     },
     "gene" = {
       ggplot(hex_summary, aes(x = hex_x, y = hex_y)) +
-        geom_hex(aes(fill = majority, alpha = mean_expr), stat = "identity") +
-        get_color_scale(color_palette) +
+        geom_hex(aes(fill = mean_expr), stat = "identity") +
+        scale_fill_gradientn(colors = c("blue", "green", "yellow", "red")) +  # Use a continuous color scale
         scale_alpha_continuous(range = c(alpha, 1)) +
-        labs(alpha = paste0(gene_name, "\nExpression"))
+        labs(fill = paste0(gene_name, "\nExpression"))
     }
   ) +
     coord_equal() +
@@ -184,8 +190,14 @@ HexnicPlot(seurat_obj, label_col = "cell_type", plot_type = "entropy")
 
 # Gene expression plot: Visualizes the expression of a specific gene 
 # ===================================================================
-gene_name <- "ENSG00000238009"
-HexnicPlot(seurat_obj, label_col = "cell_type", plot_type = "gene", gene_name = gene_name, assay = "RNA", layer = "counts")
+gene_name <- "ENSG00000131591"
+
+# Create the gene expression plot
+p <- HexnicPlot(seurat_obj, label_col = "cell_type", plot_type = "gene", gene_name = gene_name, assay = "RNA", layer = "counts")
+
+# Use a continuous color scale for the gene expression plot
+p + scale_fill_gradientn(colors = c("blue", "green", "yellow", "red"))
+
 
 #A Second Hexnic Plot Function Specific to Calculating Methylation
 #==================================================================
@@ -267,3 +279,35 @@ HexnicPlot2 <- function(
 }
 
 HexnicPlot2(seurat_obj, label_col = "cell_type", viridis = "magma")
+
+#Solving for most methylated gene in a certain cell type
+#========================================================
+FindMostMethylatedGene <- function(seurat_obj, cell_type, assay = "RNA", layer = "data") {
+    # Check if the cell_type column exists
+    if (!"cell_type" %in% colnames(seurat_obj@meta.data)) {
+        stop("Cell type information is missing from metadata.")
+    }
+    
+    # Filter cells based on the specified cell type
+    filtered_cells <- rownames(seurat_obj@meta.data[seurat_obj@meta.data$cell_type == cell_type, ])
+    
+    # Check if there are any filtered cells
+    if (length(filtered_cells) == 0) {
+        stop("No cells match the specified cell type.")
+    }
+    
+    # Extract methylation data for the filtered cells
+    methylation_data <- GetAssayData(seurat_obj, assay = assay, slot = layer)
+    
+    # Calculate the mean methylation for each gene across the filtered cells
+    mean_methylation <- apply(methylation_data[, filtered_cells], 1, mean, na.rm = TRUE)
+    
+    # Find the gene with the highest mean methylation
+    most_methylated_gene <- names(mean_methylation)[which.max(mean_methylation)]
+    
+    return(most_methylated_gene)
+}
+
+# Example of using the function for "CD14-low, CD16-positive monocyte" cell type
+most_methylated_gene <- FindMostMethylatedGene(seurat_obj, cell_type = "CD14-low, CD16-positive monocyte")
+print(most_methylated_gene)
