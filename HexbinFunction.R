@@ -1,4 +1,4 @@
-Create Hexagonal Map Visualization for Single-cell Data
+#Create Hexagonal Map Visualization for Single-cell Data
 #'
 #' @param seurat_obj Seurat object
 #' @param reduction Dimension reduction to use (default: "umap")
@@ -39,7 +39,7 @@ HexnicPlot <- function(
   if (plot_type == "gene" && is.null(gene_name)) {
     stop("gene_name must be provided when plot_type is 'gene'")
   }
-  
+
   get_color_scale <- function(palette_name, continuous = FALSE) {
     adaptive_pal_inner <- function(values) {
       force(values)
@@ -52,7 +52,7 @@ HexnicPlot <- function(
         }
       }
     }
-    
+
     raw_cols <- switch(palette_name,
                        "npg" = ggsci:::ggsci_db$"npg"[["nrc"]],
                        "aaas" = ggsci:::ggsci_db$"aaas"[["default"]],
@@ -62,33 +62,33 @@ HexnicPlot <- function(
                        "lancet" = ggsci:::ggsci_db$"lancet"[["lanonc"]],
                        "d3" = ggsci:::ggsci_db$"d3"[["category20"]]
     )
-    
+
     raw_cols_rgb <- col2rgb(raw_cols)
     alpha_cols <- rgb(
       raw_cols_rgb[1L, ], raw_cols_rgb[2L, ], raw_cols_rgb[3L, ],
       alpha = 255L, names = names(raw_cols),
       maxColorValue = 255L
     )
-    
+
     if (continuous) {
       scale_fill_gradientn(colors = raw_cols)
     } else {
       discrete_scale("fill", palette_name, adaptive_pal_inner(unname(alpha_cols)))
     }
   }
-  
+
   umap_coords <- seurat_obj@reductions[[reduction]]@cell.embeddings
-  
+
   hb_umap_df <- data.frame(
     UMAP1 = umap_coords[, 1],
     UMAP2 = umap_coords[, 2],
     class = seurat_obj@meta.data[[label_col]]
   )
-  
+
   x_range <- diff(range(hb_umap_df$UMAP1))
   y_range <- diff(range(hb_umap_df$UMAP2))
   hex_size <- min(x_range, y_range) / hex_density
-  
+
   hex_coords <- function(x, y, size) {
     sqrt3 <- sqrt(3)
     col <- round(x / (size * 1.5))
@@ -98,16 +98,16 @@ HexnicPlot <- function(
       y = row * size * sqrt3 + (col %% 2) * size * sqrt3/2
     )
   }
-  
+
   coords <- hex_coords(hb_umap_df$UMAP1, hb_umap_df$UMAP2, hex_size)
   hb_umap_df$hex_x <- coords$x
   hb_umap_df$hex_y <- coords$y
-  
+
   if (plot_type == "gene") {
     gene_expr <- GetAssayData(seurat_obj, assay = assay, layer = layer)[gene_name,]
     hb_umap_df$gene_expr <- gene_expr[rownames(hb_umap_df)]
   }
-  
+
   hex_summary <- switch(
     plot_type,
     "majority" = {
@@ -145,11 +145,11 @@ HexnicPlot <- function(
     }
   ) %>%
     filter(cell_count >= min_cells)
-  
+
   if (nrow(hex_summary) < 2) {
     stop("Not enough rows in hex_summary to perform interpolation.")
   }
-  
+
   p <- switch(
     plot_type,
     "majority" = {
@@ -168,7 +168,7 @@ HexnicPlot <- function(
     "gene" = {
       ggplot(hex_summary, aes(x = hex_x, y = hex_y)) +
         geom_hex(aes(fill = mean_expr), stat = "identity") +
-        scale_fill_gradientn(colors = c("blue", "green", "yellow", "red")) +  # Use a continuous color scale
+        scale_fill_viridis_c(option = viridis) +  # Use magma from viridis for color scale
         scale_alpha_continuous(range = c(alpha, 1)) +
         labs(fill = paste0(gene_name, "\nExpression"))
     }
@@ -176,7 +176,7 @@ HexnicPlot <- function(
     coord_equal() +
     theme_minimal() +
     theme(panel.grid = element_blank())
-  
+
   return(p)
 }
 
@@ -190,18 +190,18 @@ HexnicPlot(seurat_obj, label_col = "cell_type", plot_type = "entropy")
 
 # Gene expression plot: Visualizes the expression of a specific gene 
 # ===================================================================
-gene_name <- "ENSG00000131591"
+gene_name <- "ENSG00000129757"
 
 # Create the gene expression plot
 p <- HexnicPlot(seurat_obj, label_col = "cell_type", plot_type = "gene", gene_name = gene_name, assay = "RNA", layer = "counts")
 
-# Use a continuous color scale for the gene expression plot
-p + scale_fill_gradientn(colors = c("blue", "green", "yellow", "red"))
+# Use the magma color palette for the gene expression plot
+p + scale_fill_viridis_c(option = "magma")
 
 
 #A Second Hexnic Plot Function Specific to Calculating Methylation
 #==================================================================
-HexnicPlot2 <- function(
+HexnicPlotMethylation <- function(
     seurat_obj,
     reduction = "umap",
     label_col,
@@ -278,7 +278,7 @@ HexnicPlot2 <- function(
     print(p)
 }
 
-HexnicPlot2(seurat_obj, label_col = "cell_type", viridis = "magma")
+HexnicPlotMethylation(seurat_obj, label_col = "cell_type", viridis = "magma")
 
 #Solving for most methylated gene in a certain cell type
 #========================================================
